@@ -20,6 +20,7 @@
 /*** data ***/
 
 struct editorConfig {
+  int cx, cy;
   int screenrows;
   int screencols;
   struct termios orig_termios;
@@ -131,8 +132,14 @@ void editorDrawRows(struct abuf *ab) {
     if (y == E.screenrows / 3) {
       char welcome[80];
       int welcomelen = snprintf(welcome, sizeof(welcome),
-				"Flux v%s: text editor", FLUX_VERSION);
+				"Flux v%s: text editor in C", FLUX_VERSION);
       if (welcomelen > E.screencols) welcomelen = E.screencols;
+      int padding = (E.screencols - welcomelen) / 2;
+      if (padding) {
+	abAppend(ab, "~", 1);
+	padding--;
+      }
+      while (padding--) abAppend(ab, " ", 1);
       abAppend(ab, welcome, welcomelen);
     } else {
       abAppend(ab, "~", 1);
@@ -179,6 +186,9 @@ void editorProcessKeypress() {
 /*** init ***/
 
 void initEditor() {
+  E.cx = 0;
+  E.cy = 0;
+  
   if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
 
