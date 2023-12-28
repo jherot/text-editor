@@ -247,6 +247,14 @@ void editorRowInsertChar(erow *row, int at, int c) {
   E.dirty++;
 }
 
+void editorRowDelChar(erow *row, int at) {
+  if (at < 0 || at >= row->size) return;
+  memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
+  row->size--;
+  editorUpdateRow(row);
+  E.dirty++;
+}
+
 
 /*** editor operations ***/
 
@@ -258,6 +266,15 @@ void editorInsertChar(int c) {
   E.cx++;
 }
 
+void editorDelChar() {
+  if (E.cy == E.numrows) return;
+
+  erow *row = &E.row[E.cy];
+  if (E.cx > 0) {
+    editorRowDelChar(row, E.cx - 1);
+    E.cx--;
+  }
+}
 
 /*** file i/o ***/
 
@@ -406,7 +423,7 @@ void editorDrawRows(struct abuf *ab) {
 void editorDrawStatusBar(struct abuf *ab) {
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
-  int len = snprintf(status, sizeof(status), "%.20s - %d lines",
+  int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
 		     E.filename ? E.filename : "[No Name]", E.numrows,
 		     E.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
@@ -539,7 +556,8 @@ void editorProcessKeypress() {
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
-      /* TODO */
+      if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+      editorDelChar();
       break;
 
     case PAGE_UP:
