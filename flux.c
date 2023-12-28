@@ -22,7 +22,7 @@
 
 #define FLUX_VERSION "0.0.1"
 #define FLUX_TAB_STOP 8
-#define FLUX_QUIT_TIMES 2
+#define FLUX_QUIT_TIMES 1
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -234,6 +234,19 @@ void editorAppendRow(char *s, size_t len) {
   editorUpdateRow(&E.row[at]);
   
   E.numrows++;
+  E.dirty++;
+}
+
+void editorFreeRow(erow *row) {
+  free(row->render);
+  free(row->chars);
+}
+
+void editorDelRow(int at) {
+  if (at < 0 || at >= E.numrows) return;
+  editorFreeRow(&E.row[at]);
+  memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
+  E.numrows--;
   E.dirty++;
 }
 
@@ -531,7 +544,7 @@ void editorProcessKeypress() {
     case CTRL_KEY('q'):
       if (E.dirty && quit_times > 0) {
 	editorSetStatusMessage("WARNING: File has unsaved changes. "
-			       "Press Ctrl-Q %d more times to quit.", quit_times);
+			       "Press Ctrl-Q one more time to quit.");
 	quit_times--;
 	return;
       }
